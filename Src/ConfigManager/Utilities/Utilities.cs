@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
+using BepInEx;
+using BepInEx.Unity.Mono.Bootstrap;
 using BepInEx.Logging;
 using BepInEx.Unity.Mono;
 
@@ -38,10 +40,11 @@ namespace ConfigurationManager.Utilities
 
         // Search for instances of BaseUnityPlugin to also find dynamically loaded plugins. Doing this makes checking Chainloader.PluginInfos redundant.
         // Have to use FindObjectsOfType(Type) instead of FindObjectsOfType<T> because the latter is not available in some older unity versions.
-        public static BaseUnityPlugin[] FindPlugins() => Array.ConvertAll(Object.FindObjectsOfType(typeof(BaseUnityPlugin)), input => (BaseUnityPlugin)input);
+        public static IEnumerable<BaseUnityPlugin> FindPlugins() => UnityChainloader.Instance.Plugins.Select(kvp => (BaseUnityPlugin)kvp.Value.Instance);
 
         public static string AppendZero(this string s)
         {
+            
             return !s.Contains(".") ? s + ".0" : s;
         }
 
