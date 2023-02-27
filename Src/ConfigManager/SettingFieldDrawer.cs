@@ -1,14 +1,16 @@
 ﻿// Made by MarC0 / ManlyMarco
 // Copyright 2018 GNU General Public License v3.0
-
-using ConfigurationManager.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using BepInEx;
+
+using BepInEx.Unity.Mono.Configuration;
+
+using ConfigurationManager.Utilities;
+
 using UnityEngine;
 
 namespace ConfigurationManager
@@ -32,7 +34,7 @@ namespace ConfigurationManager
             SettingDrawHandlers = new Dictionary<Type, Action<SettingEntryBase>>
             {
                 {typeof(bool), DrawBoolField},
-                {typeof(BepInEx.Configuration.KeyboardShortcut), DrawKeyboardShortcut},
+                {typeof(KeyboardShortcut), DrawKeyboardShortcut},
                 {typeof(KeyCode), DrawKeyCode },
                 {typeof(Color), DrawColor },
                 {typeof(Vector2), DrawVector2 },
@@ -349,11 +351,10 @@ namespace ConfigurationManager
                 GUILayout.Label("Press any key", GUILayout.ExpandWidth(true));
                 GUIUtility.keyboardControl = -1;
 
-                var input = UnityInput.Current;
-                if (_keysToCheck == null) _keysToCheck = input.SupportedKeyCodes.Except(new[] { KeyCode.Mouse0, KeyCode.None }).ToArray();
+                if (_keysToCheck == null) _keysToCheck = GetSupportedKeyCodes();
                 foreach (var key in _keysToCheck)
                 {
-                    if (input.GetKeyUp(key))
+                    if (Input.GetKeyUp(key))
                     {
                         setting.Set(key);
                         _currentKeyboardShortcutToSet = null;
@@ -381,13 +382,12 @@ namespace ConfigurationManager
                 GUILayout.Label("Press any key combination", GUILayout.ExpandWidth(true));
                 GUIUtility.keyboardControl = -1;
 
-                var input = UnityInput.Current;
-                if (_keysToCheck == null) _keysToCheck = input.SupportedKeyCodes.Except(new[] { KeyCode.Mouse0, KeyCode.None }).ToArray();
+                if (_keysToCheck == null) _keysToCheck = GetSupportedKeyCodes();
                 foreach (var key in _keysToCheck)
                 {
-                    if (input.GetKeyUp(key))
+                    if (Input.GetKeyUp(key))
                     {
-                        setting.Set(new BepInEx.Configuration.KeyboardShortcut(key, _keysToCheck.Where(input.GetKey).ToArray()));
+                        setting.Set(new KeyboardShortcut(key, _keysToCheck.Where(Input.GetKey).ToArray()));
                         _currentKeyboardShortcutToSet = null;
                         break;
                     }
@@ -403,7 +403,7 @@ namespace ConfigurationManager
 
                 if (GUILayout.Button("Clear", GUILayout.ExpandWidth(false)))
                 {
-                    setting.Set(BepInEx.Configuration.KeyboardShortcut.Empty);
+                    setting.Set(KeyboardShortcut.Empty);
                     _currentKeyboardShortcutToSet = null;
                 }
             }
@@ -487,6 +487,10 @@ namespace ConfigurationManager
             }
 
             GUILayout.Label(cacheEntry.Tex, GUILayout.ExpandWidth(false));
+        }
+
+        private static KeyCode[] GetSupportedKeyCodes() {
+            return (KeyCode[])Enum.GetValues(typeof(KeyCode));
         }
 
         private sealed class ColorCacheEntry

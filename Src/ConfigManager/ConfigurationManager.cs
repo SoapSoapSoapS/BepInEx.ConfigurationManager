@@ -1,17 +1,22 @@
 ﻿// Made by MarC0 / ManlyMarco
 // Copyright 2018 GNU General Public License v3.0
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+
 using BepInEx;
-using BepInEx.Logging;
-using UnityEngine;
 using BepInEx.Configuration;
+using BepInEx.Logging;
+using BepInEx.Unity.Mono;
+using BepInEx.Unity.Mono.Configuration;
+
 using ConfigurationManager.Utilities;
+
+using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ConfigurationManager
 {
@@ -263,7 +268,7 @@ namespace ConfigurationManager
                 SetUnlockCursor(0, true);
 
                 if (GUI.Button(_screenRect, string.Empty, GUI.skin.box) &&
-                    !SettingWindowRect.Contains(UnityInput.Current.mousePosition))
+                    !SettingWindowRect.Contains(Input.mousePosition))
                     DisplayingWindow = false;
 
                 GUI.Box(SettingWindowRect, GUIContent.none, new GUIStyle { normal = new GUIStyleState { background = WindowBackground } });
@@ -271,7 +276,7 @@ namespace ConfigurationManager
                 GUILayout.Window(WindowId, SettingWindowRect, SettingsWindow, "Plugin / mod settings");
 
                 if (!SettingFieldDrawer.SettingKeyboardShortcut)
-                    UnityInput.Current.ResetInputAxes();
+                    Input.ResetInputAxes();
             }
         }
 

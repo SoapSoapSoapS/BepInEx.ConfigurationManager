@@ -1,11 +1,14 @@
 ﻿using System;
-using BepInEx;
-using BepInEx.Configuration;
-using ConfigurationManager.Utilities;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+
+using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Unity.Mono;
+
+using ConfigurationManager.Utilities;
 
 namespace ConfigurationManager
 {
@@ -79,7 +82,7 @@ namespace ConfigurationManager
             if (coreConfigProp == null) throw new ArgumentNullException(nameof(coreConfigProp));
 
             var coreConfig = (ConfigFile)coreConfigProp.GetValue(null, null);
-            var bepinMeta = new BepInPlugin("BepInEx", "BepInEx", typeof(BepInEx.Bootstrap.Chainloader).Assembly.GetName().Version.ToString());
+            var bepinMeta = new BepInPlugin("BepInEx", "BepInEx", typeof(BepInEx.Unity.Mono.BaseUnityPlugin).Assembly.GetName().Version.ToString());
 
             return coreConfig.Select(kvp => (SettingEntryBase)new ConfigSettingEntry(kvp.Value, null) { IsAdvanced = true, PluginInfo = bepinMeta });
         }

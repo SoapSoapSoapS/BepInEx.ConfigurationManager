@@ -2,8 +2,8 @@
 // ComboBox Extended by Hyungseok Seo.(Jerry) sdragoon@nate.com
 // this oop version of ComboBox is refactored by zhujiangbo jumbozhu@gmail.com
 // Modified by MarC0 / ManlyMarco
-
 using System;
+
 using UnityEngine;
 
 namespace ConfigurationManager.Utilities
@@ -44,7 +44,7 @@ namespace ConfigurationManager.Utilities
             var controlID = GUIUtility.GetControlID(FocusType.Passive);
 
             Vector2 currentMousePosition = Vector2.zero;
-            if (Event.current.GetTypeForControl(controlID) == EventType.mouseUp)
+            if (Event.current.GetTypeForControl(controlID) == EventType.MouseUp)
             {
                 if (isClickedComboButton)
                 {
