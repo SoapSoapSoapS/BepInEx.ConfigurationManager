@@ -33,7 +33,7 @@ namespace ConfigurationManager
             catch (Exception ex)
             {
                 results = Enumerable.Empty<SettingEntryBase>();
-                ConfigurationManager.Logger.LogError(ex);
+                ConfigurationManager.Logger?.LogError(ex);
             }
 
             try
@@ -42,7 +42,7 @@ namespace ConfigurationManager
                 foreach (var plugin in plugins)
                 {
 
-                    ConfigurationManager.Logger.LogWarning("Found Plugin " + plugin);
+                    ConfigurationManager.Logger?.LogWarning("Found Plugin " + plugin);
                     var type = plugin.GetType();
 
                     var pluginInfo = plugin.Info.Metadata;
@@ -79,7 +79,7 @@ namespace ConfigurationManager
             }
             catch (Exception ex)
             {
-                ConfigurationManager.Logger.LogError(ex);
+                ConfigurationManager.Logger?.LogError(ex);
             }
             
         }
@@ -90,7 +90,7 @@ namespace ConfigurationManager
         private static IEnumerable<SettingEntryBase> GetBepInExCoreConfig()
         {
             var coreConfig = ConfigFile.CoreConfig;
-            var bepinMeta = new BepInPlugin("BepInEx", "BepInEx", typeof(BepInEx.Unity.Mono.BaseUnityPlugin).Assembly.GetName().Version.ToString());
+            var bepinMeta = new BepInPlugin("BepInEx", "BepInEx", typeof(BaseUnityPlugin).Assembly.GetName().Version.ToString());
 
             return coreConfig.Select(kvp => (SettingEntryBase)new ConfigSettingEntry(kvp.Value, null) { IsAdvanced = true, PluginInfo = bepinMeta });
         }

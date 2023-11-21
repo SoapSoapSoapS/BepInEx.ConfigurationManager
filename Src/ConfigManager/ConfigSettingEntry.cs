@@ -13,11 +13,11 @@ namespace ConfigurationManager
     {
         public ConfigEntryBase Entry { get; }
 
-        public ConfigSettingEntry(ConfigEntryBase entry, BaseUnityPlugin owner)
+        public ConfigSettingEntry(ConfigEntryBase entry, BaseUnityPlugin? owner)
         {
             Entry = entry;
 
-            DispName = entry.Definition.Key;
+            _dispName = entry.Definition.Key;
             Category = entry.Definition.Section;
             Description = entry.Description?.Description;
 
@@ -66,7 +66,7 @@ namespace ConfigurationManager
             return Entry.BoxedValue;
         }
 
-        protected override void SetValue(object newVal)
+        protected override void SetValue(object? newVal)
         {
             Entry.BoxedValue = newVal;
         }

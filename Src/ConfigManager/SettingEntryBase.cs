@@ -19,7 +19,7 @@ namespace ConfigurationManager
         /// <summary>
         /// List of values this setting can take
         /// </summary>
-        public object[] AcceptableValues { get; protected set; }
+        public object[]? AcceptableValues { get; protected set; }
 
         /// <summary>
         /// Range of the values this setting can take
@@ -34,7 +34,7 @@ namespace ConfigurationManager
         /// <summary>
         /// Custom setting draw action
         /// </summary>
-        public Action<BepInEx.Configuration.ConfigEntryBase> CustomDrawer { get; private set; }
+        public Action<BepInEx.Configuration.ConfigEntryBase>? CustomDrawer { get; private set; }
 
         /// <summary>
         /// Show this setting in the settings screen at all? If false, don't show.
@@ -44,12 +44,12 @@ namespace ConfigurationManager
         /// <summary>
         /// Category the setting is under. Null to be directly under the plugin.
         /// </summary>
-        public string Category { get; protected set; }
+        public string? Category { get; protected set; }
 
         /// <summary>
         /// If set, a "Default" button will be shown next to the setting to allow resetting to default.
         /// </summary>
-        public object DefaultValue { get; protected set; }
+        public object? DefaultValue { get; protected set; }
 
         /// <summary>
         /// Force the "Reset" button to not be displayed, even if a valid DefaultValue is available. 
@@ -65,17 +65,22 @@ namespace ConfigurationManager
         /// <summary>
         /// Optional description shown when hovering over the setting
         /// </summary>
-        public string Description { get; protected internal set; }
+        public string? Description { get; protected internal set; }
 
         /// <summary>
         /// Name of the setting
         /// </summary>
-        public virtual string DispName { get; protected internal set; }
+        public virtual string DispName
+        {
+            get => _dispName ?? string.Empty;
+            set => _dispName = value;
+        }
+        protected string? _dispName { get; set; }
 
         /// <summary>
         /// Plugin this setting belongs to
         /// </summary>
-        public BepInPlugin PluginInfo { get; protected internal set; }
+        public BepInPlugin? PluginInfo { get; protected internal set; }
 
         /// <summary>
         /// Only allow showing of the value. False whenever possible by default.
@@ -90,7 +95,7 @@ namespace ConfigurationManager
         /// <summary>
         /// Instance of the plugin that owns this setting
         /// </summary>
-        public BaseUnityPlugin PluginInstance { get; private set; }
+        public BaseUnityPlugin? PluginInstance { get; private set; }
 
         /// <summary>
         /// Is this setting advanced
@@ -110,7 +115,7 @@ namespace ConfigurationManager
         /// <summary>
         /// Set the value of this setting
         /// </summary>
-        public void Set(object newVal)
+        public void Set(object? newVal)
         {
             if (ReadOnly != true)
                 SetValue(newVal);
@@ -119,21 +124,21 @@ namespace ConfigurationManager
         /// <summary>
         /// Implementation of <see cref="Set"/>
         /// </summary>
-        protected abstract void SetValue(object newVal);
+        protected abstract void SetValue(object? newVal);
 
         /// <summary>
         /// Custom converter from setting type to string for the textbox
         /// </summary>
-        public Func<object, string> ObjToStr { get; internal set; }
+        public Func<object, string>? ObjToStr { get; internal set; }
 
         /// <summary>
         /// Custom converter from string to setting type for the textbox
         /// </summary>
-        public Func<string, object> StrToObj { get; internal set; }
+        public Func<string, object>? StrToObj { get; internal set; }
 
         private static readonly PropertyInfo[] _myProperties = typeof(SettingEntryBase).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
-        internal void SetFromAttributes(object[] attribs, BaseUnityPlugin pluginInstance)
+        internal void SetFromAttributes(object[]? attribs, BaseUnityPlugin? pluginInstance)
         {
             PluginInstance = pluginInstance;
             PluginInfo = pluginInstance?.Info.Metadata;
@@ -147,7 +152,7 @@ namespace ConfigurationManager
                     case null: break;
                         
                     case DisplayNameAttribute da:
-                        DispName = da.DisplayName;
+                        _dispName = da.DisplayName;
                         break;
                     case CategoryAttribute ca:
                         Category = ca.Category;
@@ -194,7 +199,7 @@ namespace ConfigurationManager
                                 }
                                 catch (Exception ex)
                                 {
-                                    ConfigurationManager.Logger.LogWarning($"Failed to copy value {propertyPair.my.Name} from provided tag object {attrType.FullName} - " + ex.Message);
+                                    ConfigurationManager.Logger?.LogWarning($"Failed to copy value {propertyPair.my.Name} from provided tag object {attrType.FullName} - " + ex.Message);
                                 }
                             }
                             break;

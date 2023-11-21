@@ -17,16 +17,16 @@ namespace ConfigurationManager
 {
     internal class SettingFieldDrawer
     {
-        private static IEnumerable<KeyCode> _keysToCheck;
+        private static IEnumerable<KeyCode>? _keysToCheck;
 
         public static Dictionary<Type, Action<SettingEntryBase>> SettingDrawHandlers { get; }
 
         private static readonly Dictionary<SettingEntryBase, ComboBox> _comboBoxCache = new Dictionary<SettingEntryBase, ComboBox>();
         private static readonly Dictionary<SettingEntryBase, ColorCacheEntry> _colorCache = new Dictionary<SettingEntryBase, ColorCacheEntry>();
 
-        private static ConfigurationManager _instance;
+        private static ConfigurationManager? _instance;
 
-        private static SettingEntryBase _currentKeyboardShortcutToSet;
+        private static SettingEntryBase? _currentKeyboardShortcutToSet;
         public static bool SettingKeyboardShortcut => _currentKeyboardShortcutToSet != null;
 
         static SettingFieldDrawer()
@@ -51,8 +51,8 @@ namespace ConfigurationManager
 
         public void DrawSettingValue(SettingEntryBase setting)
         {
-            if (setting.CustomDrawer != null)
-                setting.CustomDrawer(setting is ConfigSettingEntry newSetting ? newSetting.Entry : null);
+            if (setting.CustomDrawer != null && setting is ConfigSettingEntry newSetting)
+                setting.CustomDrawer(newSetting.Entry);
             else if (setting.ShowRangeAsPercent != null && setting.AcceptableValueRange.Key != null)
                 DrawRangeField(setting);
             else if (setting.AcceptableValues != null)
@@ -61,8 +61,10 @@ namespace ConfigurationManager
                 return;
             else if (setting.SettingType.IsEnum)
                 DrawEnumField(setting);
-            else
+            else if (_instance != null)
                 DrawUnknownField(setting, _instance.RightColumnWidth);
+            else
+                throw new ArgumentException("Instance cannot be null", nameof(_instance));
         }
 
         public static void ClearCache()
@@ -83,7 +85,7 @@ namespace ConfigurationManager
             GUILayout.EndHorizontal();
         }
 
-        private static GUIStyle _categoryHeaderSkin;
+        private static GUIStyle? _categoryHeaderSkin;
         public static void DrawCategoryHeader(string text)
         {
             if (_categoryHeaderSkin == null)
@@ -100,7 +102,7 @@ namespace ConfigurationManager
             GUILayout.Label(text, _categoryHeaderSkin);
         }
 
-        private static GUIStyle _pluginHeaderSkin;
+        private static GUIStyle? _pluginHeaderSkin;
         public static bool DrawPluginHeader(GUIContent content, bool isCollapsed)
         {
             if (_pluginHeaderSkin == null)
@@ -132,6 +134,10 @@ namespace ConfigurationManager
         private static void DrawListField(SettingEntryBase setting)
         {
             var acceptableValues = setting.AcceptableValues;
+
+            if(acceptableValues == null)
+                return;
+
             if (acceptableValues.Length == 0)
                 throw new ArgumentException("AcceptableValueListAttribute returned an empty list of acceptable values. You need to supply at least 1 option.");
 
@@ -140,8 +146,10 @@ namespace ConfigurationManager
 
             if (setting.SettingType == typeof(KeyCode))
                 DrawKeyCode(setting);
-            else
+            else if (_instance != null)
                 DrawComboboxField(setting, acceptableValues, _instance.SettingWindowRect.yMax);
+            else
+                throw new ArgumentException("Instance cannot be null", nameof(_instance));
         }
 
         private static bool DrawFieldBasedOnValueType(SettingEntryBase setting)
@@ -164,6 +172,9 @@ namespace ConfigurationManager
 
         private static void DrawEnumField(SettingEntryBase setting)
         {
+            if (_instance == null)
+                throw new ArgumentException("Instance cannot be null", nameof(_instance));
+
             if (setting.SettingType.GetCustomAttributes(typeof(FlagsAttribute), false).Any())
                 DrawFlagsField(setting, Enum.GetValues(setting.SettingType), _instance.RightColumnWidth);
             else
@@ -367,6 +378,9 @@ namespace ConfigurationManager
             }
             else
             {
+                if (_instance == null)
+                    throw new ArgumentException("Instance cannot be null", nameof(_instance));
+
                 var acceptableValues = setting.AcceptableValues?.Length > 1 ? setting.AcceptableValues : Enum.GetValues(setting.SettingType);
                 DrawComboboxField(setting, acceptableValues, _instance.SettingWindowRect.yMax);
 
@@ -496,7 +510,7 @@ namespace ConfigurationManager
         private sealed class ColorCacheEntry
         {
             public Color Last;
-            public Texture2D Tex;
+            public Texture2D Tex = new (1,1);
         }
     }
 }

@@ -118,6 +118,6 @@ namespace ConfigurationManager.Utilities
         }
 
         private Vector2 _scrollPosition = Vector2.zero;
-        public static Action CurrentDropdownDrawer { get; set; }
+        public static Action? CurrentDropdownDrawer { get; set; }
     }
 }

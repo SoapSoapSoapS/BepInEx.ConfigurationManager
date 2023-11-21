@@ -16,7 +16,6 @@ using BepInEx.Unity.Mono.Configuration;
 using ConfigurationManager.Utilities;
 
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace ConfigurationManager
 {
@@ -38,8 +37,8 @@ namespace ConfigurationManager
         /// </summary>
         public const string Version = "17.1";
 
-        internal static new ManualLogSource Logger;
-        private static SettingFieldDrawer _fieldDrawer;
+        internal static new ManualLogSource? Logger;
+        private SettingFieldDrawer _fieldDrawer;
 
         private static readonly Color _advancedSettingColor = new Color(1f, 0.95f, 0.67f, 1f);
         private const int WindowId = -68;
@@ -51,7 +50,7 @@ namespace ConfigurationManager
         /// <summary>
         /// Event fired every time the manager window is shown or hidden.
         /// </summary>
-        public event EventHandler<ValueChangedEventArgs<bool>> DisplayingWindowChanged;
+        public event EventHandler<ValueChangedEventArgs<bool>>? DisplayingWindowChanged;
 
         /// <summary>
         /// Disable the hotkey check used by config manager. If enabled you have to set <see cref="DisplayingWindow"/> to show the manager.
@@ -61,23 +60,23 @@ namespace ConfigurationManager
         private bool _displayingWindow;
         private bool _obsoleteCursor;
 
-        private string _modsWithoutSettings;
+        private string? _modsWithoutSettings;
 
-        private List<SettingEntryBase> _allSettings;
-        private List<PluginSettingsData> _filteredSetings = new List<PluginSettingsData>();
+        private List<SettingEntryBase> _allSettings = new ();
+        private List<PluginSettingsData> _filteredSetings = new ();
 
         internal Rect SettingWindowRect { get; private set; }
         private Rect _screenRect;
         private Vector2 _settingWindowScrollPos;
         private int _tipsHeight;
 
-        private PropertyInfo _curLockState;
-        private PropertyInfo _curVisible;
+        private PropertyInfo? _curLockState;
+        private PropertyInfo? _curVisible;
         private int _previousCursorLockState;
         private bool _previousCursorVisible;
 
-        internal static Texture2D TooltipBg { get; private set; }
-        internal static Texture2D WindowBackground { get; private set; }
+        internal static Texture2D? TooltipBg { get; private set; }
+        internal static Texture2D? WindowBackground { get; private set; }
 
         internal int LeftColumnWidth { get; private set; }
         internal int RightColumnWidth { get; private set; }
@@ -128,7 +127,7 @@ namespace ConfigurationManager
                     _focusSearchBox = true;
 
                     // Do through reflection for unity 4 compat
-                    if (_curLockState != null)
+                    if (_curLockState != null && _curVisible != null)
                     {
                         _previousCursorLockState = _obsoleteCursor ? Convert.ToInt32((bool)_curLockState.GetValue(null, null)) : (int)_curLockState.GetValue(null, null);
                         _previousCursorVisible = (bool)_curVisible.GetValue(null, null);
@@ -154,7 +153,7 @@ namespace ConfigurationManager
             if (onGuiDrawer == null) throw new ArgumentNullException(nameof(onGuiDrawer));
 
             if (SettingFieldDrawer.SettingDrawHandlers.ContainsKey(settingType))
-                Logger.LogWarning("Tried to add a setting drawer for type " + settingType.FullName + " while one already exists.");
+                Logger?.LogWarning("Tried to add a setting drawer for type " + settingType.FullName + " while one already exists.");
             else
                 SettingFieldDrawer.SettingDrawHandlers[settingType] = onGuiDrawer;
         }
@@ -207,23 +206,31 @@ namespace ConfigurationManager
 
             _filteredSetings = results
                 .GroupBy(x => x.PluginInfo)
+                .Where(pluginSettings => pluginSettings.Key != null)
                 .Select(pluginSettings =>
                 {
+                    if (pluginSettings.Key == null)
+                        throw new Exception();
+
+
                     var categories = pluginSettings
                         .GroupBy(eb => eb.Category)
                         .OrderBy(x => string.Equals(x.Key, shortcutsCatName, StringComparison.Ordinal))
                         .ThenBy(x => x.Key)
-                        .Select(x => new PluginSettingsData.PluginSettingsGroupData { Name = x.Key, Settings = x.OrderByDescending(set => set.Order).ThenBy(set => set.DispName).ToList() });
+                        .Where(x => x.Key != null)
+                        .Select(x => new PluginSettingsData.PluginSettingsGroupData(
+                            x.Key ?? "", x.OrderByDescending(set => set.Order).ThenBy(set => set.DispName).ToList()));
 
                     var website = Utils.GetWebsite(pluginSettings.First().PluginInstance);
 
                     return new PluginSettingsData
-                    {
-                        Info = pluginSettings.Key,
-                        Categories = categories.ToList(),
-                        Collapsed = nonDefaultCollpasingStateByPluginName.Contains(pluginSettings.Key.Name) ? !settingsAreCollapsed : settingsAreCollapsed,
-                        Website = website
-                    };
+                    (
+                        pluginSettings.Key,
+                        categories.ToList(),
+                        website ?? "Website Missing",
+                        nonDefaultCollpasingStateByPluginName.Contains(pluginSettings.Key.Name)
+                            ? !settingsAreCollapsed : settingsAreCollapsed
+                    );
                 })
                 .OrderBy(x => x.Info.Name)
                 .ToList();
@@ -236,6 +243,9 @@ namespace ConfigurationManager
 
         private static bool ContainsSearchString(SettingEntryBase setting, string[] searchStrings)
         {
+            if(setting.PluginInfo == null)
+                throw new ArgumentNullException(nameof(setting.PluginInfo));
+
             var combinedSearchTarget = setting.PluginInfo.Name + "\n" +
                                        setting.PluginInfo.GUID + "\n" +
                                        setting.DispName + "\n" +
@@ -443,7 +453,7 @@ namespace ConfigurationManager
                 if (GUILayout.Button("Log", GUILayout.ExpandWidth(false)))
                 {
                     try { Utils.OpenLog(); }
-                    catch (SystemException ex) { Logger.Log(LogLevel.Message | LogLevel.Error, ex.Message); }
+                    catch (SystemException ex) { Logger?.Log(LogLevel.Message | LogLevel.Error, ex.Message); }
                 }
             }
             GUILayout.EndHorizontal();
@@ -499,25 +509,18 @@ namespace ConfigurationManager
             var isSearching = !string.IsNullOrEmpty(SearchString);
 
             {
-                var hasWebsite = plugin.Website != null;
-                if (hasWebsite)
-                {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Space(29); // Same as the URL button to keep the plugin name centered
-                }
+                GUILayout.BeginHorizontal();
+                GUILayout.Space(29); // Same as the URL button to keep the plugin name centered
 
                 if (SettingFieldDrawer.DrawPluginHeader(categoryHeader, plugin.Collapsed && !isSearching) && !isSearching)
                     plugin.Collapsed = !plugin.Collapsed;
 
-                if (hasWebsite)
-                {
-                    var origColor = GUI.color;
-                    GUI.color = Color.gray;
-                    if (GUILayout.Button(new GUIContent("URL", plugin.Website), GUI.skin.label, GUILayout.ExpandWidth(false)))
-                        Utils.OpenWebsite(plugin.Website);
-                    GUI.color = origColor;
-                    GUILayout.EndHorizontal();
-                }
+                var origColor = GUI.color;
+                GUI.color = Color.gray;
+                if (GUILayout.Button(new GUIContent("URL", plugin.Website), GUI.skin.label, GUILayout.ExpandWidth(false)))
+                    Utils.OpenWebsite(plugin.Website);
+                GUI.color = origColor;
+                GUILayout.EndHorizontal();
             }
 
             if (isSearching || !plugin.Collapsed)
@@ -553,7 +556,7 @@ namespace ConfigurationManager
                 }
                 catch (Exception ex)
                 {
-                    Logger.Log(LogLevel.Error, $"Failed to draw setting {setting.DispName} - {ex}");
+                    Logger?.Log(LogLevel.Error, $"Failed to draw setting {setting.DispName} - {ex}");
                     GUILayout.Label("Failed to draw this field, check log for details.");
                 }
             }
@@ -562,7 +565,7 @@ namespace ConfigurationManager
 
         private void DrawSettingName(SettingEntryBase setting)
         {
-            if (setting.HideSettingName) return;
+            if (setting.HideSettingName || setting.DispName == null) return;
 
             var origColor = GUI.color;
             if (setting.IsAdvanced == true)
@@ -623,8 +626,8 @@ namespace ConfigurationManager
 
             // Check if user has permissions to write config files to disk
             try { Config.Save(); }
-            catch (IOException ex) { Logger.Log(LogLevel.Message | LogLevel.Warning, "WARNING: Failed to write to config directory, expect issues!\nError message:" + ex.Message); }
-            catch (UnauthorizedAccessException ex) { Logger.Log(LogLevel.Message | LogLevel.Warning, "WARNING: Permission denied to write to config directory, expect issues!\nError message:" + ex.Message); }
+            catch (IOException ex) { Logger?.Log(LogLevel.Message | LogLevel.Warning, "WARNING: Failed to write to config directory, expect issues!\nError message:" + ex.Message); }
+            catch (UnauthorizedAccessException ex) { Logger?.Log(LogLevel.Message | LogLevel.Warning, "WARNING: Permission denied to write to config directory, expect issues!\nError message:" + ex.Message); }
         }
 
         private void Update()
@@ -643,7 +646,7 @@ namespace ConfigurationManager
 
         private void SetUnlockCursor(int lockState, bool cursorVisible)
         {
-            if (_curLockState != null)
+            if (_curLockState != null && _curVisible != null)
             {
                 // Do through reflection for unity 4 compat
                 //Cursor.lockState = CursorLockMode.None;
@@ -675,10 +678,28 @@ namespace ConfigurationManager
                 }
             }
 
+            public PluginSettingsData(
+                BepInPlugin info,
+                List<PluginSettingsGroupData> categories,
+                string website,
+                bool collapsed)
+            {
+                Info = info;
+                Categories = categories;
+                Website = website;
+                Collapsed = collapsed;
+            }
+
             public sealed class PluginSettingsGroupData
             {
                 public string Name;
                 public List<SettingEntryBase> Settings;
+
+                public PluginSettingsGroupData(string name, List<SettingEntryBase> settings)
+                {
+                    Name = name;
+                    Settings = settings;
+                }
             }
         }
     }

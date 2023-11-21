@@ -7,14 +7,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-using BepInEx;
 using BepInEx.Unity.Mono.Bootstrap;
 using BepInEx.Logging;
 using BepInEx.Unity.Mono;
 
 using UnityEngine;
-
-using Object = UnityEngine.Object;
 
 namespace ConfigurationManager.Utilities
 {
@@ -64,7 +61,7 @@ namespace ConfigurationManager.Utilities
 
         public static void OpenLog()
         {
-            bool TryOpen(string path)
+            bool TryOpen(string? path)
             {
                 if (path == null) return false;
                 try
@@ -78,7 +75,7 @@ namespace ConfigurationManager.Utilities
                 }
             }
 
-            var candidates = new List<string>();
+            var candidates = new List<string?>();
 
             // Redirected by preloader to game root
             var rootDir = Path.Combine(Application.dataPath, "..");
@@ -115,7 +112,7 @@ namespace ConfigurationManager.Utilities
             throw new FileNotFoundException("No log files were found");
         }
 
-        public static string GetWebsite(BaseUnityPlugin bepInPlugin)
+        public static string? GetWebsite(BaseUnityPlugin? bepInPlugin)
         {
             if (bepInPlugin == null) return null;
             try
@@ -134,7 +131,7 @@ namespace ConfigurationManager.Utilities
             }
             catch (Exception e)
             {
-                ConfigurationManager.Logger.LogWarning($"Failed to get URI for {bepInPlugin?.Info?.Metadata?.Name} - {e.Message}");
+                ConfigurationManager.Logger?.LogWarning($"Failed to get URI for {bepInPlugin?.Info?.Metadata?.Name} - {e.Message}");
                 return null;
             }
         }
@@ -148,7 +145,7 @@ namespace ConfigurationManager.Utilities
             }
             catch (Exception ex)
             {
-                ConfigurationManager.Logger.Log(LogLevel.Message | LogLevel.Warning, $"Failed to open URL {url}\nCause: {ex.Message}");
+                ConfigurationManager.Logger?.Log(LogLevel.Message | LogLevel.Warning, $"Failed to open URL {url}\nCause: {ex.Message}");
             }
         }
     }
